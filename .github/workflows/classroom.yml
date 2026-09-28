@@ -1,0 +1,57 @@
+name: Autograding Tests
+'on':
+  push:
+  repository_dispatch:
+permissions:
+  checks: write
+  actions: read
+  contents: read
+jobs:
+  run-autograding-tests:
+    runs-on: [self-hosted, oracle]
+    if: github.actor != 'github-classroom[bot]'
+    steps:
+    - name: Checkout code
+      uses: actions/checkout@v4
+    
+    - name: Setup Node.js
+      uses: actions/setup-node@v4
+      with:
+        node-version: '22'
+    
+    # Cachear node_modules
+    - name: Cache node_modules
+      uses: actions/cache@v4
+      with:
+        path: node_modules
+        key: ${{ runner.os }}-node-${{ hashFiles('package-lock.json') }}
+        restore-keys: |
+          ${{ runner.os }}-node-
+    
+    - name: Ejercicio 6 - Metadatos
+      id: ejercicio-6
+      uses: classroom-resources/autograding-command-grader@v1
+      with:
+        test-name: Ejercicio 6 - Metadatos
+        setup-command: npm install
+        command: npx jest tests/ejercicio/6-metadatos.test.js
+        timeout: 30
+        max-score: 45
+    
+    - name: Ejercicio 7 - Metadatos y Favicon
+      id: ejercicio-7
+      uses: classroom-resources/autograding-command-grader@v1
+      with:
+        test-name: Ejercicio 7 - Metadatos y Favicon
+        setup-command: ''
+        command: npx jest tests/ejercicio/7-metadatos-favicon.test.js
+        timeout: 30
+        max-score: 55
+    
+    - name: Autograding Reporter
+      uses: classroom-resources/autograding-grading-reporter@v1
+      env:
+        EJERCICIO-6_RESULTS: "${{steps.ejercicio-6.outputs.result}}"
+        EJERCICIO-7_RESULTS: "${{steps.ejercicio-7.outputs.result}}"
+      with:
+        runners: ejercicio-6,ejercicio-7
